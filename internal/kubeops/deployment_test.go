@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -20,7 +20,7 @@ func getDeploymentObject(name, namespace string, replicaSize int32) *appsv1.Depl
 	deploymentName := name
 	imageName := "nginx"
 	imageTag := "latest"
-	replicas := pointer.Int32(replicaSize)
+	replicas := ptr.To(replicaSize)
 
 	// Create the Deployment object
 	deployment := &appsv1.Deployment{
@@ -78,7 +78,7 @@ func replicaSetWithOwnerSetToDeployment(deploy *appsv1.Deployment, size int32) *
 		Spec: appsv1.ReplicaSetSpec{
 			Selector: deploy.Spec.Selector,
 			Template: deploy.Spec.Template,
-			Replicas: pointer.Int32(size),
+			Replicas: ptr.To(size),
 		},
 	}
 
@@ -140,7 +140,7 @@ func TestGetPodInDeployment(t *testing.T) {
 	r.Equal(rsNotFoundMessage, err.Error())
 
 	// we now modify the existing replicaSet and set the replica size to 1
-	rsSpec.Spec.Replicas = pointer.Int32(1)
+	rsSpec.Spec.Replicas = ptr.To[int32](1)
 	rsObj, err := svc.Client.AppsV1().ReplicaSets(namespace).Update(ctx, rsSpec, metav1.UpdateOptions{})
 	r.NoError(err, "failed to update replicaset size set 1")
 	_, err = svc.GetPodInDeployment(ctx, name, namespace)

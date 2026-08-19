@@ -68,7 +68,7 @@ func TestLaunchEphemeralContainerInPod_InvalidEphemeralContainer(t *testing.T) {
 
 		r.NoError(err)
 
-		gotName := pod.Spec.EphemeralContainers[0].EphemeralContainerCommon.Name
+		gotName := pod.Spec.EphemeralContainers[0].Name
 
 		r.Equal(ephContainerName, gotName)
 

@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -65,10 +64,10 @@ func NewEKSCluster(t *testing.T, terraformDir, clusterNameSuffix string, nm Netw
 
 func (g *EKSCluster) Create(t *testing.T) {
 	// terraform init
-	terraform.InitAndPlan(t, g.opts)
+	terraform.InitAndPlanContext(t, t.Context(), g.opts)
 
 	// terraform apply
-	terraform.Apply(t, g.opts)
+	terraform.ApplyContext(t, t.Context(), g.opts)
 
 	if g.networkMode == Calico {
 		g.installCalico(t)
@@ -78,7 +77,6 @@ func (g *EKSCluster) Create(t *testing.T) {
 func (g *EKSCluster) installCalico(t *testing.T) {
 	// once the cluster is ready, we need to follow the instructions here
 	// https://docs.tigera.io/calico/3.26/getting-started/kubernetes/managed-public-cloud/eks
-	ctx := context.Background()
 
 	lg := logger.NewHCLogger("INFO", "netassertv2-e2e-calico", os.Stdout)
 
@@ -89,7 +87,7 @@ func (g *EKSCluster) installCalico(t *testing.T) {
 
 	// kubectl delete daemonset -n kube-system aws-node
 	err = svc.Client.AppsV1().DaemonSets("kube-system").Delete(
-		ctx, "aws-node", metav1.DeleteOptions{})
+		t.Context(), "aws-node", metav1.DeleteOptions{})
 
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -102,7 +100,7 @@ func (g *EKSCluster) installCalico(t *testing.T) {
 	options := k8s.NewKubectlOptions("", g.kubeConfigPath, "")
 
 	// we now apply calico CNI manifest
-	k8s.KubectlApply(t, options, g.terraformDir+"/../calico-3.26.4.yaml")
+	k8s.KubectlApplyContext(t, t.Context(), options, g.terraformDir+"/../calico-3.26.4.yaml")
 
 	// update the desired_size variable to 3
 	g.opts.Vars["desired_size"] = 3
@@ -111,7 +109,7 @@ func (g *EKSCluster) installCalico(t *testing.T) {
 	newTFOptions := terraform.WithDefaultRetryableErrors(t, g.opts)
 	// terraform apply the new options
 	// this terraform apply should scale up the worker nodes with Calico CNI
-	if _, err := terraform.InitAndApplyE(t, newTFOptions); err != nil {
+	if _, err := terraform.InitAndApplyContextE(t, t.Context(), newTFOptions); err != nil {
 		t.Fatalf("failed to run terraform init and apply: %s", err)
 	}
 
@@ -121,7 +119,7 @@ func (g *EKSCluster) installCalico(t *testing.T) {
 
 func (g *EKSCluster) Destroy(t *testing.T) {
 	if g.opts != nil {
-		terraform.Destroy(t, g.opts)
+		terraform.DestroyContext(t, t.Context(), g.opts)
 	}
 }
 

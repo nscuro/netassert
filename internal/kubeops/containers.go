@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // LaunchEphemeralContainerInPod - Launches an ephemeral container in running Pod
@@ -110,8 +110,8 @@ func (svc *Service) BuildEphemeralSnifferContainer(
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{"NET_RAW"},
 				},
-				AllowPrivilegeEscalation: pointer.Bool(false),
-				RunAsNonRoot:             pointer.Bool(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
 			},
 		},
 		// empty string forces the container to run in the namespace of the Pod, rather than the container
@@ -162,8 +162,8 @@ func (svc *Service) BuildEphemeralScannerContainer(
 			StdinOnce: false,
 			TTY:       false,
 			SecurityContext: &corev1.SecurityContext{
-				RunAsNonRoot:             pointer.Bool(true),
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				RunAsNonRoot:             ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
 			},
 		},
 		// empty string forces the container to run in the namespace of the Pod, rather than the container

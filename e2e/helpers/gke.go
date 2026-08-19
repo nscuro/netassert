@@ -45,15 +45,15 @@ func NewGKECluster(t *testing.T, terraformDir, clusterNameSuffix string, nm Netw
 
 func (g *GKECluster) Create(t *testing.T) {
 	// terraform init
-	terraform.InitAndPlan(t, g.opts)
+	terraform.InitAndPlanContext(t, t.Context(), g.opts)
 
 	// terraform apply
-	terraform.Apply(t, g.opts)
+	terraform.ApplyContext(t, t.Context(), g.opts)
 }
 
 func (g *GKECluster) Destroy(t *testing.T) {
 	if g.opts != nil {
-		terraform.Destroy(t, g.opts)
+		terraform.DestroyContext(t, t.Context(), g.opts)
 	}
 }
 
