@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // createStatefulSet - creates a statefulset and returns the same
@@ -52,7 +52,7 @@ func createStatefulSet(client kubernetes.Interface, name, namespace string, repl
 			Namespace: namespace,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas:    pointer.Int32(replicas),
+			Replicas:    ptr.To(replicas),
 			ServiceName: "nginx-service",
 			Selector:    selector,
 			Template:    podTemplate,
@@ -96,7 +96,7 @@ func createStatefulSetPod(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%d", statefulSet.Name, index),
 			Namespace: statefulSet.Namespace,
-			Labels:    statefulSet.Spec.Template.ObjectMeta.Labels,
+			Labels:    statefulSet.Spec.Template.Labels,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(statefulSet, appsv1.SchemeGroupVersion.WithKind("StatefulSet")),
 			},

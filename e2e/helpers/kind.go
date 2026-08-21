@@ -54,7 +54,7 @@ func (k *KindCluster) Create(t *testing.T) {
 	k.provider = provider
 
 	options := k8s.NewKubectlOptions("", k.kubeConfigPath, "")
-	k8s.KubectlApply(t, options, "https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/calico.yaml")
+	k8s.KubectlApplyContext(t, t.Context(), options, "https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/calico.yaml")
 }
 
 func (k *KindCluster) Destroy(t *testing.T) {

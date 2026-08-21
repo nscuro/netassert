@@ -176,7 +176,6 @@ func createTestDestroy(t *testing.T, gc helpers.GenericCluster) {
 	defer gc.Destroy(t) // safe to call also when the cluster has not been created
 	gc.Create(t)
 
-	ctx := context.Background()
 	kubeConfig := gc.KubeConfigGet()
 	svc, err := kubeops.NewServiceFromKubeConfigFile(kubeConfig, hclog.NewNullLogger())
 	if err != nil {
@@ -184,7 +183,7 @@ func createTestDestroy(t *testing.T, gc helpers.GenericCluster) {
 		t.Fatal(err)
 	}
 
-	if err := svc.PingHealthEndpoint(ctx, "/healthz"); err != nil {
+	if err := svc.PingHealthEndpoint(t.Context(), "/healthz"); err != nil {
 		t.Logf("Failed to ping kubernetes server: %s", err)
 		t.Fatal(err)
 	}
@@ -195,10 +194,10 @@ func createTestDestroy(t *testing.T, gc helpers.GenericCluster) {
 	options := k8s.NewKubectlOptions("", kubeConfig, "")
 
 	// let's wait for all the nodes to be ready
-	k8s.WaitUntilAllNodesReady(t, options, 20, 1*time.Minute)
+	k8s.WaitUntilAllNodesReadyContext(t, t.Context(), options, 20, 1*time.Minute)
 
 	// we apply all the manifests and then run
-	k8s.KubectlApply(t, options, "./manifests/workload.yaml")
+	k8s.KubectlApplyContext(t, t.Context(), options, "./manifests/workload.yaml")
 	namespaces := waitUntilManifestReady(t, svc, "./manifests/workload.yaml")
 
 	netAssertTestCases, err := data.ReadTestsFromFile(testCasesFile)
@@ -207,10 +206,10 @@ func createTestDestroy(t *testing.T, gc helpers.GenericCluster) {
 	}
 
 	// create the network policies
-	k8s.KubectlApply(t, options, "./manifests/networkpolicies.yaml")
+	k8s.KubectlApplyContext(t, t.Context(), options, "./manifests/networkpolicies.yaml")
 
 	// run the sample tests
-	runTests(ctx, t, svc, netAssertTestCases)
+	runTests(t.Context(), t, svc, netAssertTestCases)
 
 	if gc.SkipNetPolTests() {
 		return
@@ -230,14 +229,14 @@ func createTestDestroy(t *testing.T, gc helpers.GenericCluster) {
 	for _, ns := range namespaces {
 		nsKubeOptions := k8s.NewKubectlOptions("", kubeConfig, ns)
 
-		k8s.KubectlApplyFromString(t, nsKubeOptions, denyAllPolicyBody)
+		k8s.KubectlApplyFromStringContext(t, t.Context(), nsKubeOptions, denyAllPolicyBody)
 
-		k8s.WaitUntilNetworkPolicyAvailable(t, nsKubeOptions, "default-deny-all", 10, 5*time.Second)
+		k8s.WaitUntilNetworkPolicyAvailableContext(t, t.Context(), nsKubeOptions, "default-deny-all", 10, 5*time.Second)
 		require.NoError(t, err, "Error, the NetworkPolicy should exist in namespace %s", ns)
 	}
 
 	// run the tests with network policies blocking everything
-	runTests(ctx, t, svc, netAssertTestCases)
+	runTests(t.Context(), t, svc, netAssertTestCases)
 }
 
 func runTests(ctx context.Context, t *testing.T, svc *kubeops.Service, netAssertTestCases data.Tests) {
